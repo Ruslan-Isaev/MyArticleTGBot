@@ -6,6 +6,7 @@ from aiogram.types import Message
 from aiogram.enums import ParseMode
 import random
 import config
+from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 
 # Инициализация бота и диспетчера
 bot = Bot(token=config.TOKEN)
@@ -29,6 +30,19 @@ async def cmd_error(message: Message):
         await message.answer("Я понимаю только команду <code>Моя статья</code>, других команд я не знаю.", parse_mode=ParseMode.HTML)
     else:
         pass
+
+@dp.inline_query()
+async def inline_query_handler(query: InlineQuery):
+    results = [
+        InlineQueryResultArticle(
+            id="1",
+            title="Моя статья",
+            input_message_content=InputTextMessageContent(
+                message_text=f"🤷‍♂️ Сегодня я приговариваюсь к статье {random.choice(ukrf.ukrflist)}", parse_mode=ParseMode.HTML
+            )
+        )
+    ]
+    await query.answer(results=results, is_personal=True, cache_time=0)
 
 # Запуск бота
 async def main():
