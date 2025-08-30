@@ -1,4 +1,4 @@
-import ukrf
+from assets.laws import law_list
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
@@ -22,7 +22,7 @@ async def cmd_mc(message: Message):
     user_id = message.from_user.id
     user_fullname = message.from_user.full_name
     user_link = f'tg://user?id={user_id}'
-    await message.answer(f"🤷‍♂️ Сегодня <a href='{user_link}'>{user_fullname}</a> приговаривается к статье {random.choice(ukrf.ukrflist)}", parse_mode=ParseMode.HTML)
+    await message.answer(f"🤷‍♂️ Сегодня <a href='{user_link}'>{user_fullname}</a> приговаривается к статье {random.choice(law_list)}", parse_mode=ParseMode.HTML)
 
 @dp.message()
 async def cmd_error(message: Message):
@@ -38,7 +38,7 @@ async def inline_query_handler(query: InlineQuery):
             id="1",
             title="Моя статья",
             input_message_content=InputTextMessageContent(
-                message_text=f"🤷‍♂️ Сегодня я приговариваюсь к статье {random.choice(ukrf.ukrflist)}", parse_mode=ParseMode.HTML
+                message_text=f"🤷‍♂️ Сегодня я приговариваюсь к статье {random.choice(law_list)}", parse_mode=ParseMode.HTML
             )
         )
     ]
