@@ -1,10 +1,10 @@
 import asyncio
 import aiogram
 import random
-import config
 import logging
 import os
 from aiohttp import web
+from dotenv import load_dotenv
 from assets.laws import law_list
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
@@ -15,6 +15,8 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "your_token")
 
@@ -62,48 +64,65 @@ async def inline_query_handler(query: InlineQuery):
     ]
     await query.answer(results=results, is_personal=True, cache_time=0)
 
+async def health_check(request):
+    return web.Response(text="OK")
+
+async def on_shutdown():
+    logger.info("Завершение работы бота...")
+    await bot.session.close()
+
 async def on_startup():
     if USE_WEBHOOK:
         logger.info(f"Настройка вебхука: {WEBHOOK_URL}")
         await bot.set_webhook(
             url=WEBHOOK_URL,
             drop_pending_updates=True,
-            allowed_updates=["message", "callback_query"]
+            allowed_updates=["message", "callback_query", "inline_query"]
         )
         logger.info("Вебхук успешно настроен!")
     else:
+        # Удаляем вебхук если используем polling
         await bot.delete_webhook(drop_pending_updates=True)
         logger.info("Вебхук удален, используется polling")
 
 async def start_webhook():
     app = web.Application()
+    app.router.add_get("/health", health_check)
+    app.router.add_get("/", health_check)
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
     )
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+
     setup_application(app, dp, bot=bot)
+
     await on_startup()
+
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, WEB_SERVER_HOST, WEB_SERVER_PORT)
-    
+
     logger.info(f"Запуск сервера на {WEB_SERVER_HOST}:{WEB_SERVER_PORT}")
     logger.info(f"Вебхук URL: {WEBHOOK_URL}")
-    
+
     try:
         await site.start()
-        # Ждем бесконечно
         await asyncio.Event().wait()
+    except KeyboardInterrupt:
+        logger.info("Получен сигнал остановки")
     finally:
+        await on_shutdown()
         await runner.cleanup()
 
 async def start_polling():
     await on_startup()
-    
+
     try:
         logger.info("Запуск бота в режиме polling...")
         await dp.start_polling(bot, drop_pending_updates=True)
+    except KeyboardInterrupt:
+        logger.info("Получен сигнал остановки")
     finally:
         await on_shutdown()
 
@@ -111,11 +130,12 @@ async def main():
     logger.info("Бот запускается...")
     logger.info(f"Версия aiogram: {aiogram.__version__}")
     logger.info(f"Режим работы: {'Webhook' if USE_WEBHOOK else 'Polling'}")
-    
+
     if USE_WEBHOOK:
         await start_webhook()
     else:
         await start_polling()
 
 if __name__ == "__main__":
+    import aiogram
     asyncio.run(main())
