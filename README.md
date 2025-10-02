@@ -1,3 +1,7 @@
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![PyPI](https://img.shields.io/pypi/v/aiogram)
+![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)
+
 # Telegram Bot - Моя статья УК РФ
 
 Телеграм-бот для развлечения, который случайным образом "приговаривает" пользователя к статье Уголовного кодекса РФ. Бот работает как в личных сообщениях, так и в группах, а также поддерживает inline-режим.
