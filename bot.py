@@ -11,6 +11,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.enums import ParseMode
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -30,6 +31,10 @@ WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 8080))
 # Режим работы: webhook или polling
 USE_WEBHOOK = os.getenv("USE_WEBHOOK", "false").lower() == "true"
 
+def law_url(text: str) -> int:
+    num_str = text.split('.')[0]
+    return f"https://www.zakonrf.info/uk/{int(num_str)}"
+
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -42,7 +47,11 @@ async def cmd_mc(message: Message):
     user_id = message.from_user.id
     user_fullname = message.from_user.full_name
     user_link = f'tg://user?id={user_id}'
-    await message.answer(f"🤷‍♂️ Сегодня <a href='{user_link}'>{user_fullname}</a> приговаривается к статье {random.choice(law_list)}", parse_mode=ParseMode.HTML)
+    law = random.choice(law_list)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="📚 Изучить статью", url=f"{law_url(law)}")]
+])
+    await message.answer(f"🤷‍♂️ Сегодня <a href='{user_link}'>{user_fullname}</a> приговаривается к статье {law}", reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
 @dp.message()
 async def cmd_error(message: Message):
@@ -53,13 +62,19 @@ async def cmd_error(message: Message):
 
 @dp.inline_query()
 async def inline_query_handler(query: InlineQuery):
+    law = random.choice(law_list)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="📚 Изучить статью", url=f"{law_url(law)}")]
+])
     results = [
         InlineQueryResultArticle(
             id="1",
             title="Моя статья",
             input_message_content=InputTextMessageContent(
-                message_text=f"🤷‍♂️ Сегодня я приговариваюсь к статье {random.choice(law_list)}", parse_mode=ParseMode.HTML
-            )
+                message_text=f"🤷‍♂️ Сегодня я приговариваюсь к статье {law}",
+                parse_mode=ParseMode.HTML
+            ),
+            reply_markup=keyboard
         )
     ]
     await query.answer(results=results, is_personal=True, cache_time=0)

@@ -34,6 +34,8 @@ Thumbs.db
 
 # dotenv or secret configs
 .env
+.env.example
+.gitignore
 config.py
 
 # Docker
